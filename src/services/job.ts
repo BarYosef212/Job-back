@@ -1,21 +1,43 @@
 import { Job, IJob } from '../models/Job';
 import { Website, IWebsite } from '../models/Website';
 import * as cheerio from "cheerio";
-import {logger} from '../utils/logger';
+import { logger } from '../utils/logger';
 import { getGeneral } from './general';
 
 
 export const scanJobs = async (): Promise<void> => {
   try {
     const websites = await Website.find() as IWebsite[];
+
     const jobs = [];
     const basicKeywords = await getGeneral();
     for (const website of websites) {
-      const html = await scanJob(website.url);
-      const keywords = [...basicKeywords.keywords, ...website.keywords || []];
-      const data = await findDataInHtmlByKeywords(html, keywords);
-      const job = { websiteId: website._id as string, data } as IJob;
-      jobs.push(job);
+      try {
+        const html = await scanJob(website.url);
+        const keywords = [...basicKeywords.keywords, ...website.keywords || []];
+        const data = await findDataInHtmlByKeywords(html, keywords);
+        if (data.length === 0) continue;
+        const job = { websiteId: website._id as string, data } as IJob;
+        jobs.push(job);
+
+        // Update lastScanned and clear any previous errors on successful scan
+        await Website.findByIdAndUpdate(website._id, {
+          lastScanned: new Date(),
+          lastError: undefined,
+          lastErrorAt: undefined,
+        });
+      } catch (error) {
+        logger.error(`Error scanning job: ${website.name}`, error);
+
+        // Update website with error information
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        await Website.findByIdAndUpdate(website._id, {
+          lastError: errorMessage,
+          lastErrorAt: new Date(),
+        });
+
+        continue;
+      }
     }
     await updateJobs(jobs);
   } catch (error) {
@@ -27,9 +49,9 @@ export const scanJobs = async (): Promise<void> => {
 
 const scanJob = async (websiteUrl: string) => {
   try {
-   const response = await fetch(websiteUrl);
-   const html = await response.text();
-   return html;
+    const response = await fetch(websiteUrl);
+    const html = await response.text();
+    return html;
   } catch (error) {
     console.log('err');
     throw error;
@@ -51,12 +73,12 @@ const findDataInHtmlByKeywords = async (html: string, keywords: string[]) => {
 
       for (const keyword of keywords) {
         if (text.toLowerCase().includes(keyword.toLowerCase())) {
-          results.add(text); 
+          results.add(text);
         }
       }
     });
 
-    return Array.from(results); 
+    return Array.from(results);
   } catch (error) {
     throw error;
   }

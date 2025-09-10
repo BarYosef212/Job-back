@@ -18,6 +18,7 @@ export const getAllJobs = async (req: Request, res: Response): Promise<Response>
 export const scanJobs = async (req: Request, res: Response): Promise<Response> => {
   try {
     await jobService.scanJobs();
+    logger.info('Jobs scanned successfully');
     return res.status(200).json({ message: 'Jobs scanned successfully' });
   } catch (error) {
     logger.error('Error scanning jobs:', error);

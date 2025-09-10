@@ -6,6 +6,8 @@ export interface IWebsite extends Document {
   isActive: boolean;
   keywords?: string[];
   lastScanned?: Date;
+  lastError?: string;
+  lastErrorAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +33,12 @@ const WebsiteSchema = new Schema<IWebsite>({
     trim: true
   }],
   lastScanned: {
+    type: Date
+  },
+  lastError: {
+    type: String
+  },
+  lastErrorAt: {
     type: Date
   },
 }, {
