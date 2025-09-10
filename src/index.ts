@@ -13,7 +13,7 @@ import { scanJobs } from './services/job';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 app.use(cors());
 app.use(express.json());
@@ -55,11 +55,12 @@ async function startCronJob() {
 
 setInterval(startCronJob, 60 * 1000);
 
-app.listen(PORT, async () => {
+app.listen(PORT ,'0.0.0.0', async () => {
   await connectToMongoDB();
   await startCronJob();
   logger.info(`Server running on port ${PORT}`);
 });
+
 
 
 export default app;
