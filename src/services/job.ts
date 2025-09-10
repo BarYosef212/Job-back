@@ -4,9 +4,20 @@ import * as cheerio from "cheerio";
 import { logger } from '../utils/logger';
 import { getGeneral } from './general';
 
+// Global scanning state for cron jobs
+let isCronScanning = false;
+
 
 export const scanJobs = async (): Promise<void> => {
+  if (isCronScanning) {
+    logger.info('Cron scan already in progress, skipping...');
+    return;
+  }
+
   try {
+    isCronScanning = true;
+    logger.info('Starting cron job scan...');
+
     const websites = await Website.find() as IWebsite[];
 
     const jobs = [];
@@ -40,9 +51,16 @@ export const scanJobs = async (): Promise<void> => {
       }
     }
     await updateJobs(jobs);
+    logger.info('Cron job scan completed successfully');
   } catch (error) {
     logger.error('Error scanning jobs:', error);
+  } finally {
+    isCronScanning = false;
   }
+};
+
+export const isScanningInProgress = (): boolean => {
+  return isCronScanning;
 };
 
 

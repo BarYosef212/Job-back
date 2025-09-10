@@ -8,5 +8,6 @@ const router = express.Router();
 
 router.get('/', jobController.getAllJobs);
 router.get('/scan-jobs', jobController.scanJobs);
+router.get('/scanning-status', jobController.getScanningStatus);
 
 export { router as jobRoutes };
